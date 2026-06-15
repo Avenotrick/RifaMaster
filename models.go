@@ -16,14 +16,14 @@ type NumberPublic struct {
 }
 
 type Payment struct {
-	ID            string  `json:"id"`
-	PreferenceID  string  `json:"preference_id,omitempty"`
-	Number        int     `json:"number"`
-	Status        string  `json:"status"`
-	BuyerName     string  `json:"buyer_name"`
-	BuyerEmail    string  `json:"buyer_email"`
-	Amount        float64 `json:"amount"`
-	CreatedAt     string  `json:"created_at"`
+	ID           string  `json:"id"`
+	PreferenceID string  `json:"preference_id,omitempty"`
+	Number       int     `json:"number"`
+	Status       string  `json:"status"`
+	BuyerName    string  `json:"buyer_name"`
+	BuyerEmail   string  `json:"buyer_email"`
+	Amount       float64 `json:"amount"`
+	CreatedAt    string  `json:"created_at"`
 }
 
 type NumbersResponse struct {
@@ -39,8 +39,8 @@ type Counts struct {
 }
 
 type CreatePaymentRequest struct {
-	Number    int    `json:"number"`
-	BuyerName string `json:"buyer_name"`
+	Number     int    `json:"number"`
+	BuyerName  string `json:"buyer_name"`
 	BuyerEmail string `json:"buyer_email"`
 }
 
@@ -51,10 +51,10 @@ type CreatePaymentResponse struct {
 }
 
 type MPWebhook struct {
-	Action string    `json:"action"`
-	Data   *MPData   `json:"data"`
-	ID     string    `json:"id,omitempty"`
-	Type   string    `json:"type,omitempty"`
+	Action string  `json:"action"`
+	Data   *MPData `json:"data"`
+	ID     string  `json:"id,omitempty"`
+	Type   string  `json:"type,omitempty"`
 }
 
 type MPData struct {
@@ -62,9 +62,9 @@ type MPData struct {
 }
 
 type MPPayment struct {
-	ID                int64       `json:"id"`
-	Status            string      `json:"status"`
-	ExternalReference string      `json:"external_reference"`
+	ID                int64  `json:"id"`
+	Status            string `json:"status"`
+	ExternalReference string `json:"external_reference"`
 }
 
 type ErrorResponse struct {

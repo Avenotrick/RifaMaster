@@ -17,10 +17,7 @@ func NewHandlers(db *sql.DB, mp *MPClient) *Handlers {
 }
 
 func (h *Handlers) Health(w http.ResponseWriter, r *http.Request) {
-	writeJSON(w, http.StatusOK, map[string]string{
-		"status":  "ok",
-		"version": "1.0.0",
-	})
+	writeJSON(w, http.StatusOK, map[string]string{"status": "ok", "version": "1.0.0"})
 }
 
 func (h *Handlers) ListNumbers(w http.ResponseWriter, r *http.Request) {
@@ -34,10 +31,7 @@ func (h *Handlers) ListNumbers(w http.ResponseWriter, r *http.Request) {
 	var available, reserved, sold int
 
 	for _, n := range numbers {
-		p := NumberPublic{
-			Number: n.Number,
-			Status: n.Status,
-		}
+		p := NumberPublic{Number: n.Number, Status: n.Status}
 		if n.Status == "sold" {
 			p.BuyerName = n.BuyerName
 			sold++
@@ -51,34 +45,8 @@ func (h *Handlers) ListNumbers(w http.ResponseWriter, r *http.Request) {
 
 	writeJSON(w, http.StatusOK, NumbersResponse{
 		Numbers: public,
-		Counts: Counts{
-			Available: available,
-			Reserved:  reserved,
-			Sold:      sold,
-			Total:     100,
-		},
+		Counts:  Counts{Available: available, Reserved: reserved, Sold: sold, Total: 1000},
 	})
-}
-
-func (h *Handlers) GetNumber(w http.ResponseWriter, r *http.Request) {
-	numStr := r.PathValue("number")
-	num := parseInt(numStr)
-	if num < 1 || num > 100 {
-		writeError(w, http.StatusBadRequest, "Número inválido")
-		return
-	}
-
-	n, err := GetNumber(h.db, num)
-	if err != nil {
-		writeError(w, http.StatusNotFound, "Número no encontrado")
-		return
-	}
-
-	p := NumberPublic{Number: n.Number, Status: n.Status}
-	if n.Status == "sold" {
-		p.BuyerName = n.BuyerName
-	}
-	writeJSON(w, http.StatusOK, p)
 }
 
 func (h *Handlers) CreatePayment(w http.ResponseWriter, r *http.Request) {
@@ -88,21 +56,20 @@ func (h *Handlers) CreatePayment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if req.Number < 1 || req.Number > 100 {
-		writeError(w, http.StatusBadRequest, "Número debe estar entre 1 y 100")
-		return
-	}
-	if req.BuyerName == "" || req.BuyerEmail == "" {
-		writeError(w, http.StatusBadRequest, "Nombre y email obligatorios")
+	if req.Number < 1 || req.Number > 1000 || req.BuyerName == "" || req.BuyerEmail == "" {
+		writeError(w, http.StatusBadRequest, "Datos inválidos")
 		return
 	}
 
-	n, err := GetNumber(h.db, req.Number)
-	if err != nil {
-		writeError(w, http.StatusNotFound, "Número no encontrado")
-		return
+	numbers, _ := GetAllNumbers(h.db)
+	disponible := false
+	for _, n := range numbers {
+		if n.Number == req.Number && n.Status == "available" {
+			disponible = true
+			break
+		}
 	}
-	if n.Status != "available" {
+	if !disponible {
 		writeError(w, http.StatusConflict, "El número no está disponible")
 		return
 	}
@@ -122,31 +89,21 @@ func (h *Handlers) CreatePayment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	payment := &Payment{
-		ID:           paymentID,
-		PreferenceID: pref.PreferenceID,
-		Number:       req.Number,
-		Status:       "pending",
-		BuyerName:    req.BuyerName,
-		BuyerEmail:   req.BuyerEmail,
-		Amount:       amount,
-	}
-	if err := CreatePayment(h.db, payment); err != nil {
-		log.Printf("Error guardando pago: %v", err)
-	}
+	CreatePayment(h.db, &Payment{
+		ID: paymentID, PreferenceID: pref.PreferenceID, Number: req.Number,
+		Status: "pending", BuyerName: req.BuyerName, BuyerEmail: req.BuyerEmail, Amount: amount,
+	})
 
 	writeJSON(w, http.StatusCreated, pref)
 }
 
 func (h *Handlers) GetPaymentStatus(w http.ResponseWriter, r *http.Request) {
 	paymentID := r.PathValue("paymentId")
-
 	p, err := GetPayment(h.db, paymentID)
 	if err != nil {
 		writeError(w, http.StatusNotFound, "Pago no encontrado")
 		return
 	}
-
 	writeJSON(w, http.StatusOK, p)
 }
 
@@ -178,61 +135,31 @@ func (h *Handlers) Webhook(w http.ResponseWriter, r *http.Request) {
 
 	extRef := mpPayment.ExternalReference
 	if extRef == "" {
-		log.Printf("Webhook sin external_reference, ignorando: %s", paymentID)
+		log.Printf("Webhook sin external_reference: %s", paymentID)
 		writeJSON(w, http.StatusOK, map[string]string{"status": "ignored"})
 		return
 	}
 
 	switch mpPayment.Status {
 	case "approved":
-		payment, err := GetPayment(h.db, extRef)
+		p, err := GetPayment(h.db, extRef)
 		if err != nil {
 			log.Printf("Error obteniendo pago local %s: %v", extRef, err)
 			break
 		}
-
 		if err := ConfirmPayment(h.db, extRef); err != nil {
 			log.Printf("Error confirmando pago %s: %v", extRef, err)
 			break
 		}
-
-		log.Printf("Pago aprobado: %s (ref: %s, número #%d)", paymentID, extRef, payment.Number)
-
-		if err := sendConfirmationEmail(payment.BuyerEmail, payment.BuyerName, payment.Number); err != nil {
-			log.Printf("Error enviando email a %s: %v", payment.BuyerEmail, err)
-		}
+		log.Printf("Pago aprobado: %s (#%d)", extRef, p.Number)
+		sendConfirmationEmail(p.BuyerEmail, p.BuyerName, p.Number)
 
 	case "rejected", "cancelled", "refunded", "charged_back":
-		if err := RejectPayment(h.db, extRef); err != nil {
-			log.Printf("Error rechazando pago %s: %v", extRef, err)
-		} else {
-			log.Printf("Pago rechazado: %s (ref: %s)", paymentID, extRef)
-		}
-
-	default:
-		log.Printf("Estado no manejado: %s - %s", mpPayment.Status, paymentID)
+		RejectPayment(h.db, extRef)
+		log.Printf("Pago rechazado: %s", extRef)
 	}
 
 	writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
-}
-
-func (h *Handlers) AvailableNumbers(w http.ResponseWriter, r *http.Request) {
-	numbers, err := GetAllNumbers(h.db)
-	if err != nil {
-		writeError(w, http.StatusInternalServerError, "Error al obtener números")
-		return
-	}
-
-	var available []int
-	for _, n := range numbers {
-		if n.Status == "available" {
-			available = append(available, n.Number)
-		}
-	}
-
-	writeJSON(w, http.StatusOK, map[string]interface{}{
-		"available": available,
-	})
 }
 
 func corsMiddleware(next http.Handler) http.Handler {
@@ -240,12 +167,10 @@ func corsMiddleware(next http.Handler) http.Handler {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-
 		if r.Method == http.MethodOptions {
 			w.WriteHeader(http.StatusNoContent)
 			return
 		}
-
 		next.ServeHTTP(w, r)
 	})
 }

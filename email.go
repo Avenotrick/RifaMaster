@@ -7,10 +7,10 @@ import (
 	"strings"
 )
 
-func sendConfirmationEmail(to, name string, number int) error {
+func sendConfirmationEmail(to, name string, number int) {
 	if !cfg.SmtpEnabled() {
 		log.Printf("[EMAIL SIMULADO] Para %s (%s): Número #%d confirmado", name, to, number)
-		return nil
+		return
 	}
 
 	subject := fmt.Sprintf("Confirmación: Tu número %d para la Rifa", number)
@@ -23,11 +23,11 @@ func sendConfirmationEmail(to, name string, number int) error {
 	addr := fmt.Sprintf("%s:%d", cfg.SmtpHost, cfg.SmtpPort)
 
 	if err := smtp.SendMail(addr, auth, cfg.SmtpFrom, []string{to}, []byte(msg)); err != nil {
-		return fmt.Errorf("error enviando email: %w", err)
+		log.Printf("Error enviando email a %s: %v", to, err)
+		return
 	}
 
 	log.Printf("Email enviado a %s (%s) para número #%d", name, to, number)
-	return nil
 }
 
 func buildEmailHTML(name string, number int) string {
@@ -56,21 +56,21 @@ func buildEmailHTML(name string, number int) string {
 </td></tr>
 <tr><td style="padding:6px 0">
 <span style="color:#94a3b8;font-size:11px;text-transform:uppercase;letter-spacing:0.5px">Rango de números</span><br>
-<span style="color:#1e293b;font-size:13px;font-weight:600">1 – 100</span>
+<span style="color:#1e293b;font-size:13px;font-weight:600">1 – 1000</span>
 </td></tr>
 </table>
 </td></tr>
 <tr><td style="background:#f8fafc;padding:20px 24px;text-align:center;border-top:1px solid #e2e8f0">
-<p style="color:#94a3b8;font-size:11px;margin:0;line-height:1.5">Si tenés alguna duda, respondé este correo o contactate con el organizador de la rifa.</p>
+<p style="color:#94a3b8;font-size:11px;margin:0;line-height:1.5">Si tenés alguna duda, contactate con el organizador de la rifa.</p>
 </td></tr>
 </table>
 </td></tr>
 </table>
 </body>
-</html>`, escapeHTML(name), number)
+</html>`, escHTML(name), number)
 }
 
-func escapeHTML(s string) string {
+func escHTML(s string) string {
 	r := strings.NewReplacer(
 		"&", "&amp;",
 		"<", "&lt;",

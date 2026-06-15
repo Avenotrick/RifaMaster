@@ -14,14 +14,8 @@ func InitDB(dsn string) (*sql.DB, error) {
 		return nil, fmt.Errorf("error abriendo db: %w", err)
 	}
 
-	// WAL mode for better concurrency
-	if _, err := db.Exec("PRAGMA journal_mode=WAL"); err != nil {
-		return nil, fmt.Errorf("error setting WAL: %w", err)
-	}
-	// Busy timeout
-	if _, err := db.Exec("PRAGMA busy_timeout=5000"); err != nil {
-		return nil, fmt.Errorf("error setting busy timeout: %w", err)
-	}
+	db.Exec("PRAGMA journal_mode=WAL")
+	db.Exec("PRAGMA busy_timeout=5000")
 
 	if err := createTables(db); err != nil {
 		return nil, fmt.Errorf("error creando tablas: %w", err)
@@ -86,7 +80,7 @@ func initNumbers(db *sql.DB) error {
 		}
 		defer stmt.Close()
 
-		for n := 1; n <= 100; n++ {
+		for n := 1; n <= 1000; n++ {
 			if _, err := stmt.Exec(n); err != nil {
 				return err
 			}
@@ -95,8 +89,9 @@ func initNumbers(db *sql.DB) error {
 		if err := tx.Commit(); err != nil {
 			return err
 		}
-		log.Println("100 números inicializados")
+		log.Println("1000 números inicializados")
 	}
+
 	return nil
 }
 
@@ -119,18 +114,6 @@ func GetAllNumbers(db *sql.DB) ([]Number, error) {
 		numbers = append(numbers, n)
 	}
 	return numbers, rows.Err()
-}
-
-func GetNumber(db *sql.DB, num int) (*Number, error) {
-	var n Number
-	err := db.QueryRow(`
-		SELECT id, number, status, COALESCE(buyer_name,''), created_at, updated_at
-		FROM numbers WHERE number = ?
-	`, num).Scan(&n.ID, &n.Number, &n.Status, &n.BuyerName, &n.CreatedAt, &n.UpdatedAt)
-	if err != nil {
-		return nil, err
-	}
-	return &n, nil
 }
 
 func ReserveNumber(db *sql.DB, num int, buyerName, buyerEmail, paymentID string) error {
@@ -165,16 +148,12 @@ func ConfirmPayment(db *sql.DB, externalRef string) error {
 	return err
 }
 
-func RejectPayment(db *sql.DB, externalRef string) error {
-	_, err := db.Exec("UPDATE payments SET status = 'rejected', updated_at = datetime('now') WHERE id = ?", externalRef)
-	if err != nil {
-		return err
-	}
-	_, err = db.Exec(`
+func RejectPayment(db *sql.DB, externalRef string) {
+	db.Exec("UPDATE payments SET status = 'rejected', updated_at = datetime('now') WHERE id = ?", externalRef)
+	db.Exec(`
 		UPDATE numbers SET status = 'available', buyer_name = NULL, buyer_email = NULL, payment_id = NULL, updated_at = datetime('now')
 		WHERE payment_id = ? AND status = 'reserved'
 	`, externalRef)
-	return err
 }
 
 func CreatePayment(db *sql.DB, p *Payment) error {

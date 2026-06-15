@@ -33,8 +33,6 @@ func main() {
 
 	mux.HandleFunc("GET /api/health", h.Health)
 	mux.HandleFunc("GET /api/numbers", h.ListNumbers)
-	mux.HandleFunc("GET /api/numbers/available", h.AvailableNumbers)
-	mux.HandleFunc("GET /api/numbers/{number}", h.GetNumber)
 	mux.HandleFunc("POST /api/payments/create", h.CreatePayment)
 	mux.HandleFunc("GET /api/payments/{paymentId}", h.GetPaymentStatus)
 	mux.HandleFunc("POST /api/webhook/mercadopago", h.Webhook)

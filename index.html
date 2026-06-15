@@ -56,7 +56,7 @@
                     <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">
                         Seleccioná tu número
                     </label>
-                    <input type="number" id="numero-seleccionado" min="1" max="100" placeholder="Ej: 7"
+                    <input type="number" id="numero-seleccionado" min="1" max="1000" placeholder="Ej: 7"
                         class="w-full px-3.5 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-lg font-bold">
                     <p id="numero-error" class="text-red-500 text-xs mt-1 hidden"></p>
                 </div>
@@ -225,8 +225,8 @@
 
             errorEl.classList.add('hidden');
 
-            if (!numero || numero < 1 || numero > 100) {
-                errorEl.innerText = 'Seleccioná un número entre 1 y 100';
+            if (!numero || numero < 1 || numero > 1000) {
+                errorEl.innerText = 'Seleccioná un número entre 1 y 1000';
                 errorEl.classList.remove('hidden');
                 return;
             }
