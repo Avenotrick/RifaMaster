@@ -3,337 +3,293 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestor de Rifas Profesional</title>
-    <!-- Tailwind CSS para diseño moderno y ultra-responsivo -->
+    <title>RifaMaster - Pago con Mercado Pago</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Lucide Icons para una interfaz de usuario visualmente rica -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        /* Estilos personalizados para transiciones suaves y barras de scroll táctiles */
-        .smooth-transition {
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        /* Esconder flechas nativas en inputs de tipo número para una UI más limpia */
+        .smooth-transition { transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); }
         input[type="number"]::-webkit-outer-spin-button,
-        input[type="number"]::-webkit-inner-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
-        }
-        input[type="number"] {
-            -moz-appearance: textfield;
-        }
+        input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type="number"] { -moz-appearance: textfield; }
+        .numero-btn { transition: all 0.15s ease; }
+        .numero-btn:hover { transform: scale(1.05); }
+        .numero-btn:active { transform: scale(0.95); }
+        .numero-btn.seleccionado { ring: 2px solid #4f46e5; }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen font-sans antialiased pb-16 lg:pb-8">
-
-    <!-- Encabezado Principal adaptado para móvil y ordenador -->
-    <header class="bg-gradient-to-r from-indigo-600 via-indigo-700 to-purple-800 text-white shadow-md sticky top-0 z-40 lg:relative">
-        <div class="max-w-6xl mx-auto px-4 py-4 md:py-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+<body class="bg-slate-50 text-slate-800 min-h-screen font-sans antialiased">
+    <header class="bg-gradient-to-r from-indigo-600 via-indigo-700 to-purple-800 text-white shadow-md">
+        <div class="max-w-6xl mx-auto px-4 py-4 md:py-6 flex items-center justify-between">
             <div class="flex items-center gap-3">
                 <div class="p-2.5 bg-white/10 rounded-xl">
                     <i data-lucide="ticket" class="w-7 h-7 text-yellow-300"></i>
                 </div>
                 <div>
-                    <h1 class="text-xl md:text-2xl font-black tracking-tight">RifaMaster <span class="text-xs bg-yellow-400 text-slate-900 px-2 py-0.5 rounded-full font-bold ml-1">MAX 3000</span></h1>
-                    <p class="text-indigo-100 text-xs">Gestión inteligente de números y cobros</p>
+                    <h1 class="text-xl md:text-2xl font-black tracking-tight">RifaMaster</h1>
+                    <p class="text-indigo-100 text-xs">Pago seguro con Mercado Pago</p>
                 </div>
             </div>
-            
-            <!-- Acciones de Datos Rápidas -->
-            <div class="flex items-center gap-2 w-full sm:w-auto">
-                <button onclick="exportarDatos()" class="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-3 py-2 bg-white/10 hover:bg-white/20 transition-all rounded-lg text-xs font-bold border border-white/15 active:scale-95">
-                    <i data-lucide="download" class="w-4 h-4"></i>
-                    <span>Exportar</span>
-                </button>
-                <label for="import-file" class="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-3 py-2 bg-yellow-400 hover:bg-yellow-500 text-slate-900 transition-all rounded-lg text-xs font-bold cursor-pointer active:scale-95 shadow-sm">
-                    <i data-lucide="upload" class="w-4 h-4"></i>
-                    <span>Importar</span>
-                    <input type="file" id="import-file" accept=".json" class="hidden" onchange="importarDatos(event)">
-                </label>
+            <div class="flex items-center gap-2 text-xs bg-white/10 px-3 py-2 rounded-lg">
+                <i data-lucide="shield" class="w-4 h-4 text-green-300"></i>
+                <span>Pagos 100% seguros</span>
             </div>
         </div>
     </header>
 
-    <!-- Barra de Navegación por Pestañas (Solo visible en dispositivos móviles/tablets pequeños) -->
-    <div class="lg:hidden flex border-b border-slate-200 bg-white sticky top-[68px] z-30 shadow-sm">
-        <button id="tab-btn-registro" onclick="cambiarTab('registro')" class="flex-1 py-3 text-center font-bold text-xs border-b-2 border-indigo-600 text-indigo-600 smooth-transition flex items-center justify-center gap-2">
-            <i data-lucide="edit-3" class="w-4 h-4"></i>
-            Anotar / Ajustes
-        </button>
-        <button id="tab-btn-lista" onclick="cambiarTab('lista')" class="flex-1 py-3 text-center font-bold text-xs border-b-2 border-transparent text-slate-500 hover:text-slate-700 smooth-transition flex items-center justify-center gap-2">
-            <i data-lucide="users" class="w-4 h-4"></i>
-            Lista de Números
-            <span id="tab-badge-count" class="bg-indigo-100 text-indigo-700 text-[10px] px-2 py-0.5 rounded-full font-extrabold">0</span>
-        </button>
-    </div>
-
-    <!-- Contenedor Principal Adaptativo -->
-    <main class="max-w-6xl mx-auto px-4 mt-4 lg:mt-8 grid grid-cols-1 lg:grid-cols-12 gap-6">
-        
-        <!-- COLUMNA IZQUIERDA: Configuración, Registro y Estadísticas (Visible por defecto en móvil, fija en desktop) -->
-        <div id="columna-izquierda" class="lg:col-span-4 space-y-6 block lg:block">
-            
-            <!-- Panel de Configuración de la Rifa (Límite 3000) -->
-            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
-                <h3 class="font-bold text-slate-900 mb-3 flex items-center justify-between">
-                    <span class="flex items-center gap-2 text-sm">
-                        <i data-lucide="sliders" class="w-4 h-4 text-indigo-500"></i>
-                        Configuración de la Rifa
-                    </span>
-                    <span class="text-[10px] bg-slate-100 px-2 py-0.5 rounded text-slate-500 font-semibold">Máx: 3000</span>
-                </h3>
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Precio Boleto ($)</label>
-                        <input type="number" id="config-precio" value="1000" min="0" oninput="actualizarEstadisticas()" class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm font-semibold">
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Números Totales</label>
-                        <input type="number" id="config-total" value="100" min="1" max="3000" oninput="validarConfigTotal(this)" class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm font-semibold">
-                    </div>
-                </div>
+    <main class="max-w-6xl mx-auto px-4 mt-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- COLUMNA IZQUIERDA: Compra -->
+        <div class="lg:col-span-4 space-y-6">
+            <!-- Precio -->
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 text-center">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Precio por número</span>
+                <div class="text-4xl font-black text-indigo-600 mt-1">$<span id="precio-numero">1000</span></div>
             </div>
 
-            <!-- Formulario de Registro de Compradores -->
+            <!-- Formulario de Compra -->
             <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
                 <h2 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
-                    <i data-lucide="user-plus" class="w-5 h-5 text-indigo-600"></i>
-                    Anotar Nuevo Número
+                    <i data-lucide="shopping-cart" class="w-5 h-5 text-indigo-600"></i>
+                    Comprar Número
                 </h2>
-                
-                <form id="form-registro" onsubmit="registrarNumero(event)" class="space-y-4">
+
+                <div class="mb-4">
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">
+                        Seleccioná tu número
+                    </label>
+                    <input type="number" id="numero-seleccionado" min="1" max="100" placeholder="Ej: 7"
+                        class="w-full px-3.5 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-lg font-bold">
+                    <p id="numero-error" class="text-red-500 text-xs mt-1 hidden"></p>
+                </div>
+
+                <div class="space-y-3">
                     <div>
-                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1 flex justify-between">
-                            <span>Número de Rifa <span class="text-red-500">*</span></span>
-                            <span id="info-rango-numeros" class="text-indigo-600 font-bold text-[10px]">Rango: 1 - 100</span>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">
+                            Nombre completo <span class="text-red-500">*</span>
                         </label>
-                        <input type="number" id="reg-numero" required min="1" placeholder="Ej: 42" class="w-full px-3.5 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-lg font-bold">
+                        <input type="text" id="comprador-nombre" required placeholder="Ej: María Gómez"
+                            class="w-full px-3.5 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
                     </div>
-
                     <div>
-                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Nombre del Comprador <span class="text-red-500">*</span></label>
-                        <input type="text" id="reg-nombre" required placeholder="Ej: Maria Gomez" class="w-full px-3.5 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm font-medium">
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">
+                            Email <span class="text-red-500">*</span>
+                        </label>
+                        <input type="email" id="comprador-email" required placeholder="ejemplo@correo.com"
+                            class="w-full px-3.5 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
                     </div>
+                </div>
 
-                    <div>
-                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Teléfono <span class="text-slate-400 text-[10px]">(Opcional para Whatsapp)</span></label>
-                        <input type="tel" id="reg-telefono" placeholder="Ej: 5492931445566 (sin símbolos)" class="w-full px-3.5 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
-                    </div>
-
-                    <button type="submit" class="w-full py-3.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold transition-all shadow-md shadow-indigo-100 flex items-center justify-center gap-2 active:scale-[0.98]">
-                        <i data-lucide="check" class="w-5 h-5"></i>
-                        <span>Anotar y Guardar</span>
-                    </button>
-                </form>
+                <button id="btn-pagar" onclick="iniciarPago()"
+                    class="w-full mt-5 py-3.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold transition-all shadow-md shadow-indigo-100 flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed">
+                    <i data-lucide="credit-card" class="w-5 h-5"></i>
+                    <span>Pagar con Mercado Pago</span>
+                </button>
+                <p class="text-[10px] text-slate-400 text-center mt-2 flex items-center justify-center gap-1">
+                    <i data-lucide="lock" class="w-3 h-3"></i>
+                    Pago procesado de forma segura por Mercado Pago
+                </p>
             </div>
 
-            <!-- Panel de Estadísticas Financieras -->
+            <!-- Panel de estado -->
             <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
-                <h3 class="font-bold text-slate-900 mb-4 flex items-center gap-2">
-                    <i data-lucide="pie-chart" class="w-4 h-4 text-indigo-500"></i>
-                    Estado de Cuentas
+                <h3 class="font-bold text-slate-900 mb-3 flex items-center gap-2 text-sm">
+                    <i data-lucide="bar-chart-3" class="w-4 h-4 text-indigo-500"></i>
+                    Estado de la Rifa
                 </h3>
                 <div class="grid grid-cols-2 gap-3">
-                    <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-100">
-                        <span class="text-[10px] text-slate-400 block font-bold uppercase tracking-wider">Vendidos</span>
-                        <span id="stats-vendidos" class="text-lg font-extrabold text-indigo-600">0</span>
-                    </div>
-                    <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-100">
+                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
                         <span class="text-[10px] text-slate-400 block font-bold uppercase tracking-wider">Disponibles</span>
-                        <span id="stats-disponibles" class="text-lg font-extrabold text-slate-600">0</span>
+                        <span id="stats-disponibles" class="text-lg font-extrabold text-indigo-600">100</span>
                     </div>
-                    <div class="bg-emerald-50 p-3.5 rounded-xl border border-emerald-100 col-span-2 flex items-center justify-between">
-                        <div>
-                            <span class="text-[10px] text-emerald-700 block font-bold uppercase tracking-wider">Recaudación Estimada</span>
-                            <span id="stats-total-dinero" class="text-2xl font-black text-emerald-600">$0</span>
-                        </div>
-                        <div class="p-2 bg-emerald-100 text-emerald-600 rounded-lg">
-                            <i data-lucide="dollar-sign" class="w-5 h-5"></i>
-                        </div>
+                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                        <span class="text-[10px] text-slate-400 block font-bold uppercase tracking-wider">Vendidos</span>
+                        <span id="stats-vendidos" class="text-lg font-extrabold text-emerald-600">0</span>
                     </div>
                 </div>
+                <div class="mt-3 bg-slate-100 rounded-full h-2 overflow-hidden">
+                    <div id="barra-progreso" class="h-full bg-indigo-500 rounded-full transition-all duration-500" style="width: 0%"></div>
+                </div>
             </div>
-
         </div>
 
-        <!-- COLUMNA DERECHA: Buscador, Tabla e Historial (Oculto en móvil por defecto, visible en desktop) -->
-        <div id="columna-derecha" class="lg:col-span-8 space-y-6 hidden lg:block">
-            
-            <!-- Barra de Herramientas, Búsqueda y Filtros -->
-            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col md:flex-row gap-3">
-                <div class="relative flex-1">
-                    <i data-lucide="search" class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5"></i>
-                    <input type="text" id="busqueda" oninput="reiniciarPaginacionYRenderizar()" placeholder="Buscar por número, nombre o teléfono..." class="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
-                </div>
-                <div class="flex items-center gap-2 justify-between md:justify-end">
-                    <button onclick="limpiarFiltro()" class="px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold rounded-xl text-xs transition-colors active:scale-95">
-                        Limpiar
-                    </button>
-                    <button onclick="confirmarBorrarTodo()" class="px-4 py-3 bg-red-50 hover:bg-red-100 text-red-600 font-semibold rounded-xl text-xs transition-colors flex items-center gap-2 active:scale-95">
-                        <i data-lucide="trash-2" class="w-4 h-4"></i>
-                        <span>Resetear Todo</span>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Listado Principal Autoadaptativo -->
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-                <div class="px-5 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+        <!-- COLUMNA DERECHA: Grid de números -->
+        <div class="lg:col-span-8">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-100">
+                <div class="px-5 py-4 border-b border-slate-100 flex justify-between items-center">
                     <h3 class="font-bold text-slate-900 flex items-center gap-2 text-sm">
-                        <i data-lucide="clipboard-list" class="w-5 h-5 text-indigo-500"></i>
-                        Registro de Números de la Rifa
+                        <i data-lucide="grid" class="w-5 h-5 text-indigo-500"></i>
+                        Todos los Números
                     </h3>
-                    <span id="total-mostrados" class="text-xs font-semibold bg-indigo-100 text-indigo-700 px-2.5 py-1 rounded-full">
-                        0 registrados
-                    </span>
-                </div>
-
-                <!-- Vista de Escritorio (Tabla estructurada para PC) -->
-                <div class="hidden md:block overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
-                        <thead>
-                            <tr class="border-b border-slate-100 text-xs font-bold uppercase tracking-wider text-slate-400 bg-slate-50/30">
-                                <th class="py-3 px-6 w-28 text-center">N° Rifa</th>
-                                <th class="py-3 px-6">Nombre del Comprador</th>
-                                <th class="py-3 px-6">Teléfono de Contacto</th>
-                                <th class="py-3 px-6 text-right">Acciones rápidas</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tabla-cuerpo" class="divide-y divide-slate-100 text-sm">
-                            <!-- Inyección dinámica JS -->
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- Vista Móvil (Tarjetas grandes optimizadas para pantallas táctiles) -->
-                <div id="lista-movil" class="md:hidden divide-y divide-slate-100">
-                    <!-- Inyección dinámica JS -->
-                </div>
-
-                <!-- Paginador Inteligente (Evita lentitud con hasta 3000 números) -->
-                <div id="controles-paginacion" class="px-5 py-3.5 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
-                    <button id="btn-pagina-prev" onclick="cambiarPagina(-1)" class="px-3 py-1.5 bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-xs font-bold transition-all flex items-center gap-1">
-                        <i data-lucide="chevron-left" class="w-4 h-4"></i> Anterior
-                    </button>
-                    <span id="info-paginas" class="text-xs text-slate-500 font-semibold">
-                        Página 1 de 1
-                    </span>
-                    <button id="btn-pagina-next" onclick="cambiarPagina(1)" class="px-3 py-1.5 bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-xs font-bold transition-all flex items-center gap-1">
-                        Siguiente <i data-lucide="chevron-right" class="w-4 h-4"></i>
-                    </button>
-                </div>
-
-                <!-- Estado Vacío o Sin Resultados -->
-                <div id="estado-vacio" class="p-12 text-center hidden">
-                    <div class="w-16 h-16 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <i data-lucide="search-code" class="w-8 h-8"></i>
+                    <div class="flex gap-2 text-xs">
+                        <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-emerald-100 border border-emerald-300"></span> Vendido</span>
+                        <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-yellow-100 border border-yellow-300"></span> Pendiente</span>
+                        <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-white border border-slate-300"></span> Disponible</span>
                     </div>
-                    <h4 class="font-bold text-slate-700 text-base">No se encontraron registros</h4>
-                    <p class="text-slate-400 text-xs mt-1">Intente ajustar los términos de búsqueda o registre un nuevo comprador.</p>
+                </div>
+                <div id="grid-numeros" class="p-5 grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 gap-2">
+                </div>
+                <div id="estado-carga" class="p-12 text-center text-slate-400">
+                    <i data-lucide="loader" class="w-8 h-8 mx-auto animate-spin mb-2"></i>
+                    <p class="text-sm">Cargando números...</p>
                 </div>
             </div>
-
         </div>
     </main>
 
-    <!-- Modal de Confirmación de Reseteo (Reemplazo táctil seguro para alert) -->
-    <div id="modal-borrar" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 animate-in fade-in zoom-in-95 duration-200">
-            <div class="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mb-4">
-                <i data-lucide="alert-triangle" class="w-6 h-6"></i>
-            </div>
-            <h3 class="text-base font-bold text-slate-900">¿Estás completamente seguro?</h3>
-            <p class="text-slate-500 text-xs mt-2">Esta acción eliminará permanentemente todos los números registrados de la memoria local. Recuerda exportar tu copia en JSON antes de continuar.</p>
-            <div class="mt-6 flex justify-end gap-3">
-                <button onclick="cerrarModalBorrar()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold transition-colors">
-                    Cancelar
-                </button>
-                <button onclick="borrarTodo()" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-semibold transition-colors shadow-sm">
-                    Sí, vaciar lista
-                </button>
-            </div>
-        </div>
-    </div>
+    <!-- Footer -->
+    <footer class="max-w-6xl mx-auto px-4 mt-8 pb-8 text-center text-xs text-slate-400">
+        <p>RifaMaster &copy; 2026 &mdash; Pagos procesados por Mercado Pago</p>
+    </footer>
 
-    <!-- Sistema de Avisos Táctiles (Toast) -->
+    <!-- Toast -->
     <div id="toast" class="fixed bottom-5 right-5 z-50 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-lg flex items-center gap-3 transition-all duration-300 transform translate-y-20 opacity-0 pointer-events-none">
         <div id="toast-icon-box" class="p-1 rounded-lg"></div>
-        <span id="toast-message" class="text-xs font-semibold">Notificación</span>
+        <span id="toast-message" class="text-xs font-semibold"></span>
     </div>
 
     <script>
-        // --- VARIABLES DE ESTADO ---
-        let baseRifas = [];
-        let paginaActual = 1;
-        const ITEMS_POR_PAGINA = 50; // Evita lag al renderizar listas grandes (máx 3000)
+        const API_BASE = window.location.origin;
+        let numerosData = [];
 
-        // --- INICIALIZACIÓN DE LA APP ---
         window.onload = function() {
-            cargarDeLocalStorage();
             lucide.createIcons();
-            renderizarListado();
-            actualizarInfoRango();
-        }
+            cargarNumeros();
+            document.getElementById('numero-seleccionado').addEventListener('input', function() {
+                document.getElementById('numero-error').classList.add('hidden');
+            });
+        };
 
-        // --- SISTEMA DE NAVEGACIÓN ENTRE PESTAÑAS (Adaptativo para Móviles) ---
-        function cambiarTab(tab) {
-            const colIzquierda = document.getElementById('columna-izquierda');
-            const colDerecha = document.getElementById('columna-derecha');
-            const tabRegistro = document.getElementById('tab-btn-registro');
-            const tabLista = document.getElementById('tab-btn-lista');
-
-            if (tab === 'registro') {
-                colIzquierda.classList.remove('hidden');
-                colIzquierda.classList.add('block');
-                colDerecha.classList.add('hidden');
-                colDerecha.classList.remove('block');
-
-                tabRegistro.classList.add('border-indigo-600', 'text-indigo-600');
-                tabRegistro.classList.remove('border-transparent', 'text-slate-500');
-                tabLista.classList.add('border-transparent', 'text-slate-500');
-                tabLista.classList.remove('border-indigo-600', 'text-indigo-600');
-            } else {
-                colIzquierda.classList.add('hidden');
-                colIzquierda.classList.remove('block');
-                colDerecha.classList.remove('hidden');
-                colDerecha.classList.add('block');
-
-                tabLista.classList.add('border-indigo-600', 'text-indigo-600');
-                tabLista.classList.remove('border-transparent', 'text-slate-500');
-                tabRegistro.classList.add('border-transparent', 'text-slate-500');
-                tabRegistro.classList.remove('border-indigo-600', 'text-indigo-600');
+        async function cargarNumeros() {
+            try {
+                const res = await fetch(`${API_BASE}/api/numbers`);
+                if (!res.ok) throw new Error('Error al cargar números');
+                const data = await res.json();
+                numerosData = data.numbers;
+                renderizarGrid();
+                actualizarStats(data.counts);
+                document.getElementById('estado-carga').classList.add('hidden');
+            } catch (e) {
+                document.getElementById('estado-carga').innerHTML = `
+                    <i data-lucide="alert-circle" class="w-8 h-8 mx-auto text-red-400 mb-2"></i>
+                    <p class="text-sm text-red-500">Error al conectar con el servidor</p>
+                    <button onclick="cargarNumeros()" class="mt-3 px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold">Reintentar</button>
+                `;
+                lucide.createIcons();
             }
         }
 
-        // --- STREAMING_CHUNK: Implementando validación de entrada con tope de 3000 ---
-        // Validación en caliente del número total de rifas configurado
-        function validarConfigTotal(input) {
-            let valor = parseInt(input.value);
-            if (valor > 3000) {
-                input.value = 3000;
-                mostrarNotificacion('El límite máximo para el sistema es de 3000 números.', 'error');
-            } else if (valor < 1 || isNaN(valor)) {
-                input.value = 1;
+        function renderizarGrid() {
+            const grid = document.getElementById('grid-numeros');
+            grid.innerHTML = '';
+
+            numerosData.forEach(n => {
+                const btn = document.createElement('button');
+                btn.className = `numero-btn relative p-2 rounded-xl text-center font-bold text-sm border-2 transition-all
+                    ${n.status === 'sold' ? 'bg-emerald-50 border-emerald-300 text-emerald-700 cursor-default' :
+                      n.status === 'reserved' ? 'bg-yellow-50 border-yellow-300 text-yellow-700 cursor-default' :
+                      'bg-white border-slate-200 text-slate-700 hover:border-indigo-400 hover:bg-indigo-50 cursor-pointer'}`;
+
+                const numero = n.number;
+                btn.innerHTML = `${numero}`;
+
+                if (n.status === 'sold') {
+                    btn.innerHTML += `<span class="absolute -top-1 -right-1 text-[8px]"><i data-lucide="check-circle" class="w-3 h-3 text-emerald-500 fill-emerald-500"></i></span>`;
+                } else if (n.status === 'available') {
+                    btn.onclick = function() {
+                        document.getElementById('numero-seleccionado').value = numero;
+                        document.getElementById('numero-error').classList.add('hidden');
+                        document.querySelectorAll('.numero-btn').forEach(b => b.classList.remove('ring-2', 'ring-indigo-500'));
+                        btn.classList.add('ring-2', 'ring-indigo-500');
+                    };
+                }
+
+                grid.appendChild(btn);
+            });
+
+            lucide.createIcons();
+        }
+
+        function actualizarStats(counts) {
+            document.getElementById('stats-disponibles').innerText = counts.available;
+            document.getElementById('stats-vendidos').innerText = counts.sold;
+
+            const pct = counts.total > 0 ? (counts.sold / counts.total) * 100 : 0;
+            document.getElementById('barra-progreso').style.width = `${pct}%`;
+        }
+
+        async function iniciarPago() {
+            const numero = parseInt(document.getElementById('numero-seleccionado').value);
+            const nombre = document.getElementById('comprador-nombre').value.trim();
+            const email = document.getElementById('comprador-email').value.trim();
+            const errorEl = document.getElementById('numero-error');
+            const btn = document.getElementById('btn-pagar');
+
+            errorEl.classList.add('hidden');
+
+            if (!numero || numero < 1 || numero > 100) {
+                errorEl.innerText = 'Seleccioná un número entre 1 y 100';
+                errorEl.classList.remove('hidden');
+                return;
             }
-            actualizarEstadisticas();
-            actualizarInfoRango();
+
+            if (!nombre) {
+                mostrarNotificacion('Ingresá tu nombre completo', 'error');
+                return;
+            }
+
+            if (!email || !email.includes('@')) {
+                mostrarNotificacion('Ingresá un email válido', 'error');
+                return;
+            }
+
+            const num = numerosData.find(n => n.number === numero);
+            if (!num || num.status !== 'available') {
+                mostrarNotificacion(`El número ${numero} ya no está disponible`, 'error');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<i data-lucide="loader" class="w-5 h-5 animate-spin"></i> Procesando...';
+            lucide.createIcons();
+
+            try {
+                const res = await fetch(`${API_BASE}/api/payments/create`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        number: numero,
+                        buyer_name: nombre,
+                        buyer_email: email
+                    })
+                });
+
+                const data = await res.json();
+
+                if (!res.ok) {
+                    mostrarNotificacion(data.error || 'Error al procesar el pago', 'error');
+                    btn.disabled = false;
+                    btn.innerHTML = '<i data-lucide="credit-card" class="w-5 h-5"></i> Pagar con Mercado Pago';
+                    lucide.createIcons();
+                    cargarNumeros();
+                    return;
+                }
+
+                // Redirigir a Mercado Pago
+                window.location.href = data.init_point;
+            } catch (e) {
+                mostrarNotificacion('Error de conexión con el servidor', 'error');
+                btn.disabled = false;
+                btn.innerHTML = '<i data-lucide="credit-card" class="w-5 h-5"></i> Pagar con Mercado Pago';
+                lucide.createIcons();
+            }
         }
 
-        function actualizarInfoRango() {
-            const total = parseInt(document.getElementById('config-total').value) || 100;
-            document.getElementById('info-rango-numeros').innerText = `Rango: 1 - ${total}`;
-            // Ajustar el atributo "max" del formulario de ventas dinámicamente
-            document.getElementById('reg-numero').max = total;
-        }
-
-        // --- NOTIFICACIONES NO INTRUSIVAS ---
         function mostrarNotificacion(mensaje, tipo = 'success') {
             const toast = document.getElementById('toast');
             const toastMsg = document.getElementById('toast-message');
             const toastIconBox = document.getElementById('toast-icon-box');
-            
+
             toastMsg.innerText = mensaje;
-            
+
             if (tipo === 'success') {
                 toastIconBox.className = "bg-emerald-500/20 text-emerald-400 p-1 rounded-lg";
                 toastIconBox.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i>';
@@ -344,7 +300,7 @@
                 toastIconBox.className = "bg-blue-500/20 text-blue-400 p-1 rounded-lg";
                 toastIconBox.innerHTML = '<i data-lucide="info" class="w-4 h-4"></i>';
             }
-            
+
             lucide.createIcons();
 
             toast.classList.remove('translate-y-20', 'opacity-0', 'pointer-events-none');
@@ -356,317 +312,12 @@
             }, 3000);
         }
 
-        // --- PERSISTENCIA LOCAL (Alternativa de alta capacidad a las Cookies) ---
-        function guardarEnLocalStorage() {
-            localStorage.setItem('rifaPro_datos_v2', JSON.stringify(baseRifas));
-            localStorage.setItem('rifaPro_precio_v2', document.getElementById('config-precio').value);
-            localStorage.setItem('rifaPro_total_v2', document.getElementById('config-total').value);
-        }
-
-        function cargarDeLocalStorage() {
-            const guardado = localStorage.getItem('rifaPro_datos_v2');
-            if (guardado) {
-                try {
-                    baseRifas = JSON.parse(guardado);
-                } catch(e) {
-                    baseRifas = [];
-                }
+        // Polling suave cada 15 segundos para actualizar estado
+        setInterval(() => {
+            if (document.visibilityState === 'visible') {
+                cargarNumeros();
             }
-            const precioGuardado = localStorage.getItem('rifaPro_precio_v2');
-            if (precioGuardado) {
-                document.getElementById('config-precio').value = precioGuardado;
-            }
-            const totalGuardado = localStorage.getItem('rifaPro_total_v2');
-            if (totalGuardado) {
-                document.getElementById('config-total').value = Math.min(parseInt(totalGuardado), 3000);
-            }
-        }
-
-        // --- STREAMING_CHUNK: Implementando copias de seguridad de datos en formato JSON ---
-        // Exportación limpia a archivo JSON
-        function exportarDatos() {
-            if (baseRifas.length === 0) {
-                mostrarNotificacion('La lista está vacía. Registre números para poder exportar.', 'error');
-                return;
-            }
-
-            const payload = {
-                modelo: "RifaMasterPro",
-                exportado: new Date().toISOString(),
-                precioBoleto: document.getElementById('config-precio').value,
-                totalBoletos: document.getElementById('config-total').value,
-                listaRifas: baseRifas
-            };
-
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(payload, null, 2));
-            const downloadAnchor = document.createElement('a');
-            downloadAnchor.setAttribute("href", dataStr);
-            downloadAnchor.setAttribute("download", `respaldo_rifas_${new Date().toISOString().slice(0,10)}.json`);
-            document.body.appendChild(downloadAnchor);
-            downloadAnchor.click();
-            downloadAnchor.remove();
-
-            mostrarNotificacion('Archivo de respaldo exportado exitosamente.', 'success');
-        }
-
-        // Importación de datos respaldados con validación total de integridad
-        function importarDatos(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const parsed = JSON.parse(e.target.result);
-                    
-                    if (parsed && Array.isArray(parsed.listaRifas)) {
-                        baseRifas = parsed.listaRifas;
-                        if (parsed.precioBoleto) document.getElementById('config-precio').value = parsed.precioBoleto;
-                        if (parsed.totalBoletos) document.getElementById('config-total').value = Math.min(parseInt(parsed.totalBoletos), 3000);
-                        
-                        guardarEnLocalStorage();
-                        reiniciarPaginacionYRenderizar();
-                        actualizarInfoRango();
-                        mostrarNotificacion('¡Archivo JSON cargado e importado con éxito!', 'success');
-                    } else if (Array.isArray(parsed)) {
-                        baseRifas = parsed;
-                        guardarEnLocalStorage();
-                        reiniciarPaginacionYRenderizar();
-                        mostrarNotificacion('Importación básica completada.', 'success');
-                    } else {
-                        mostrarNotificacion('El archivo cargado no tiene un formato válido para rifas.', 'error');
-                    }
-                } catch (err) {
-                    mostrarNotificacion('Error al analizar el contenido del JSON.', 'error');
-                }
-            };
-            reader.readAsText(file);
-            event.target.value = ''; // Limpiar campo de archivo
-        }
-
-        // --- STREAMING_CHUNK: Control de operaciones de registro y validación lógica ---
-        // Registro seguro de nuevos números vendidos
-        function registrarNumero(event) {
-            event.preventDefault();
-
-            const inputNum = document.getElementById('reg-numero');
-            const inputNom = document.getElementById('reg-nombre');
-            const inputTel = document.getElementById('reg-telefono');
-
-            const numero = parseInt(inputNum.value);
-            const nombre = inputNom.value.trim();
-            const telefono = inputTel.value.trim().replace(/[^0-9+]/g, ''); // Deja solo números y el símbolo '+'
-
-            const totalMaximo = parseInt(document.getElementById('config-total').value) || 100;
-
-            if (isNaN(numero) || numero < 1 || numero > totalMaximo) {
-                mostrarNotificacion(`Por favor ingresa un número válido dentro de los rangos actuales (1 a ${totalMaximo}).`, 'error');
-                return;
-            }
-
-            // Validar si el número ya fue vendido previamente
-            const duplicado = baseRifas.find(item => item.numero === numero);
-            if (duplicado) {
-                mostrarNotificacion(`El número ${numero} ya fue adquirido por ${duplicado.nombre}.`, 'error');
-                return;
-            }
-
-            // Añadir el nuevo registro al array de datos
-            baseRifas.push({
-                numero: numero,
-                nombre: nombre,
-                telefono: telefono,
-                fecha: new Date().toLocaleDateString()
-            });
-
-            guardarEnLocalStorage();
-            
-            // Vaciar formulario y restaurar el cursor en el input número
-            inputNum.value = '';
-            inputNom.value = '';
-            inputTel.value = '';
-            inputNum.focus();
-
-            reiniciarPaginacionYRenderizar();
-            mostrarNotificacion(`El número ${numero} se ha registrado correctamente.`, 'success');
-        }
-
-        // Liberación de un número de la base de datos
-        function borrarNumero(numero) {
-            baseRifas = baseRifas.filter(item => item.numero !== numero);
-            guardarEnLocalStorage();
-            renderizarListado();
-            mostrarNotificacion(`El número ${numero} ha sido liberado nuevamente.`, 'success');
-        }
-
-        // Modales de confirmación para reseteo completo
-        function confirmarBorrarTodo() {
-            document.getElementById('modal-borrar').classList.remove('hidden');
-        }
-
-        function cerrarModalBorrar() {
-            document.getElementById('modal-borrar').classList.add('hidden');
-        }
-
-        function borrarTodo() {
-            baseRifas = [];
-            guardarEnLocalStorage();
-            cerrarModalBorrar();
-            reiniciarPaginacionYRenderizar();
-            mostrarNotificacion('Se han borrado todos los registros guardados.', 'info');
-        }
-
-        // --- STREAMING_CHUNK: Creando el renderizado de la tabla, tarjetas móviles y paginación ---
-        // Reset de página al buscar o modificar filtros
-        function reiniciarPaginacionYRenderizar() {
-            paginaActual = 1;
-            renderizarListado();
-        }
-
-        // Manejadores de control de paginación
-        function cambiarPagina(direccion) {
-            paginaActual += direccion;
-            renderizarListado();
-        }
-
-        // Renderizado reactivo adaptable para PC y Celulares con paginado incorporado
-        function renderizarListado() {
-            const busqueda = document.getElementById('busqueda').value.toLowerCase().trim();
-            const tablaCuerpo = document.getElementById('tabla-cuerpo');
-            const listaMovil = document.getElementById('lista-movil');
-            const estadoVacio = document.getElementById('estado-vacio');
-            const totalMostrados = document.getElementById('total-mostrados');
-            const badgeContadorTab = document.getElementById('tab-badge-count');
-
-            // Filtrado del buscador
-            const filtrados = baseRifas.filter(item => {
-                return item.numero.toString().includes(busqueda) || 
-                       item.nombre.toLowerCase().includes(busqueda) || 
-                       item.telefono.includes(busqueda);
-            });
-
-            // Ordenamiento por número ascendente
-            filtrados.sort((a, b) => a.numero - b.numero);
-
-            // Cálculos del Paginador (Máx 50 items simultáneos por pantalla)
-            const totalPaginas = Math.ceil(filtrados.length / ITEMS_POR_PAGINA) || 1;
-            
-            // Corregir límites de página actual
-            if (paginaActual > totalPaginas) paginaActual = totalPaginas;
-            if (paginaActual < 1) paginaActual = 1;
-
-            const inicio = (paginaActual - 1) * ITEMS_POR_PAGINA;
-            const itemsPaginados = filtrados.slice(inicio, inicio + ITEMS_POR_PAGINA);
-
-            // Limpieza inicial de contenedores
-            tablaCuerpo.innerHTML = '';
-            listaMovil.innerHTML = '';
-
-            // Actualizar textos informativos de cantidades de listado
-            totalMostrados.innerText = `${filtrados.length} registrado(s)`;
-            badgeContadorTab.innerText = baseRifas.length;
-
-            if (filtrados.length === 0) {
-                estadoVacio.classList.remove('hidden');
-                document.getElementById('controles-paginacion').classList.add('hidden');
-            } else {
-                estadoVacio.classList.add('hidden');
-                document.getElementById('controles-paginacion').classList.remove('hidden');
-
-                // Renderizado fila por fila
-                itemsPaginados.forEach(item => {
-                    // Limpieza del número para enlace de Whatsapp directo
-                    const waEnlace = item.telefono ? `https://wa.me/${item.telefono.replace(/[^0-9]/g, '')}` : '';
-                    
-                    // Contenedor visual del teléfono
-                    const telefonoHtml = item.telefono 
-                        ? `<div class="flex items-center gap-1.5 font-medium text-slate-600">
-                            <span>${item.telefono}</span>
-                            <a href="${waEnlace}" target="_blank" class="p-1 text-emerald-600 hover:bg-emerald-50 rounded-md transition-colors" title="Contactar por WhatsApp">
-                                <i data-lucide="message-circle" class="w-4 h-4 fill-emerald-100"></i>
-                            </a>
-                           </div>` 
-                        : `<span class="text-slate-300 italic">No provisto</span>`;
-
-                    // 1. INYECCIÓN EN TABLA DESKTOP (PC)
-                    const tr = document.createElement('tr');
-                    tr.className = "hover:bg-slate-50/70 transition-colors";
-                    tr.innerHTML = `
-                        <td class="py-3 px-6 text-center font-extrabold text-slate-900 bg-slate-50/30">
-                            <span class="inline-block bg-indigo-50 text-indigo-700 px-3 py-1 rounded-lg text-sm border border-indigo-100 min-w-[50px]">
-                                ${item.numero}
-                            </span>
-                        </td>
-                        <td class="py-3 px-6 font-semibold text-slate-700">${item.nombre}</td>
-                        <td class="py-3 px-6 text-xs">${telefonoHtml}</td>
-                        <td class="py-3 px-6 text-right">
-                            <button onclick="borrarNumero(${item.numero})" class="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-xl transition-colors active:scale-95 inline-flex items-center" title="Eliminar registro">
-                                <i data-lucide="trash-2" class="w-4 h-4"></i>
-                            </button>
-                        </td>
-                    `;
-                    tablaCuerpo.appendChild(tr);
-
-                    // 2. INYECCIÓN EN TARJETAS MÓVILES (Optimizado para Touch/Dedos)
-                    const card = document.createElement('div');
-                    card.className = "p-4 flex items-center justify-between bg-white";
-                    card.innerHTML = `
-                        <div class="flex items-center gap-4">
-                            <div class="bg-indigo-50 text-indigo-700 font-extrabold text-base px-3 py-2 rounded-xl border border-indigo-100 h-fit min-w-[52px] text-center shadow-sm">
-                                ${item.numero}
-                            </div>
-                            <div>
-                                <h4 class="font-bold text-slate-800 text-sm">${item.nombre}</h4>
-                                <div class="flex items-center gap-2 mt-1">
-                                    ${item.telefono 
-                                        ? `<span class="text-xs text-slate-500 flex items-center gap-1">
-                                            <i data-lucide="phone" class="w-3.5 h-3.5"></i> ${item.telefono}
-                                           </span>
-                                           <a href="${waEnlace}" target="_blank" class="inline-flex items-center gap-1 text-[10px] bg-emerald-50 text-emerald-700 font-bold px-1.5 py-0.5 rounded border border-emerald-100">
-                                            <i data-lucide="message-circle" class="w-3 h-3"></i> WhatsApp
-                                           </a>`
-                                        : `<span class="text-xs text-slate-300 italic">Sin teléfono</span>`
-                                    }
-                                </div>
-                            </div>
-                        </div>
-                        <button onclick="borrarNumero(${item.numero})" class="p-3 bg-red-50 text-red-600 rounded-xl hover:bg-red-100 active:scale-95 transition-colors">
-                            <i data-lucide="trash-2" class="w-4 h-4"></i>
-                        </button>
-                    `;
-                    listaMovil.appendChild(card);
-                });
-            }
-
-            // Actualizar controles visuales del Paginador
-            document.getElementById('info-paginas').innerText = `Página ${paginaActual} de ${totalPaginas}`;
-            document.getElementById('btn-pagina-prev').disabled = (paginaActual === 1);
-            document.getElementById('btn-pagina-next').disabled = (paginaActual === totalPaginas);
-
-            actualizarEstadisticas();
-            lucide.createIcons();
-        }
-
-        // --- ACTUALIZACIÓN DE ESTADÍSTICAS ---
-        function actualizarEstadisticas() {
-            const totalRifa = parseInt(document.getElementById('config-total').value) || 100;
-            const precioRifa = parseFloat(document.getElementById('config-precio').value) || 0;
-
-            const vendidos = baseRifas.length;
-            const disponibles = Math.max(0, totalRifa - vendidos);
-            const totalDinero = vendidos * precioRifa;
-
-            // Inyectar en paneles de visualización
-            document.getElementById('stats-vendidos').innerText = vendidos;
-            document.getElementById('stats-disponibles').innerText = disponibles;
-            document.getElementById('stats-total-dinero').innerText = `$${totalDinero.toLocaleString('es-AR')}`;
-        }
-
-        // --- LIMPIEZA DE FILTROS ---
-        function limpiarFiltro() {
-            document.getElementById('busqueda').value = '';
-            reiniciarPaginacionYRenderizar();
-        }
+        }, 15000);
     </script>
 </body>
 </html>

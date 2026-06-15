@@ -1,0 +1,5 @@
+rifa-master
+rifa.db
+rifa.db-wal
+rifa.db-shm
+.env
