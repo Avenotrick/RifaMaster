@@ -267,12 +267,29 @@ crontab -e
 
 ---
 
+> El proyecto incluye un `Dockerfile`. Si no usas Docker, podes borrarlo, no afecta en nada.
+
 ## Desarrollo local
+
+### Con Go (requiere Go instalado)
 
 ```bash
 go run .
 ```
 
+### Con Docker (no requiere Go)
+
+```bash
+docker build -t rifamaster .
+docker run -d --name rifamaster -p 3000:3000 -v rifa-data:/app rifamaster
+```
+
+Para frenarlo:
+
+```bash
+docker stop rifamaster && docker rm rifamaster
+```
+
 Despues abri http://localhost:3000.
 
-Para pagos de prueba usa el token de MP en modo Sandbox (`TEST-...`) y las tarjetas de prueba de Mercado Pago.
+Para pagos de prueba usa el token de MP en modo Sandbox (`TEST-...`) del `.env` y las tarjetas de prueba de Mercado Pago.
