@@ -37,7 +37,7 @@ func main() {
 	mux.HandleFunc("GET /api/payments/{paymentId}", h.GetPaymentStatus)
 	mux.HandleFunc("POST /api/webhook/mercadopago", h.Webhook)
 
-	fs := http.FileServer(http.Dir("."))
+	fs := http.FileServer(http.Dir("./static"))
 	mux.Handle("GET /", fs)
 
 	addr := cfg.Addr()
